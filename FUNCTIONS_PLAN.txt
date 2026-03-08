@@ -1,0 +1,24 @@
+Looking at your current code, here are 3 functions that are natural to extract, easy to unit test with pytest, and fit the CS50P requirement of being in project.py at the top level:
+
+1. validate_mode(mode, personalities)
+Checks if a mode string is valid against the personalities list. Currently this logic is inline in main().
+pythondef validate_mode(mode: str, personalities: list[dict]) -> str:
+    valid_modes = [p["id"] for p in personalities]
+    return mode if mode in valid_modes else "normal"
+Easy to test: pass valid/invalid modes and assert the return value.
+
+2. build_contents(history, user_input)
+Constructs the contents list by combining history and the new user message. Currently inline in main().
+pythondef build_contents(history: list, user_input: str) -> list:
+    return history + [
+        types.Content(role="user", parts=[types.Part(text=user_input)])
+    ]
+Easy to test: assert the last item is always the user message, assert history is preserved.
+
+3. get_persona_prompt(mode, personalities)
+Looks up and returns the prompt dict for a given mode. Currently a next() one-liner buried in main().
+pythondef get_persona_prompt(mode: str, personalities: list[dict]):
+    return next(
+        (p["prompt"] for p in personalities if p["id"] == mode), None
+    )
+Easy to test: pass a known mode and assert the correct prompt is returned, pass an unknown mode and assert None.

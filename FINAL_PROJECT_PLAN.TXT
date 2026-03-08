@@ -1,0 +1,74 @@
+==== mAI friend - Adaptive AI Companion =====
+
+features: 
+    - remembers user preferences
+    - interactive
+    - adapts its tone - Adaptive Personality (Memory)
+    - switches personality modes (IMPERSONATION MODE)
+    - remembers history
+    - trained through prompt engineering
+
+1. Display message -> Personality Selector -> LLM Decide Personality
+    -> Prompt Input Depends on Personality -> Prompt Builder -> LLM (Gemini 2.5 flash) 
+    -> (Input + Response -> Memory storage) -> Output text response.
+2. Mode Select
+3. Personality Mode System (personalities.py) -> prompt
+4. Prompt Builder (prompt.py) -> personality, history, user_message
+5. Memory System (use json and prompt engineering to store memory) 
+
+
+========================================================
+Welcome, my friend.
+
+You can switch modes and talk just like a friend: 
+    - Einstein mode (science talk)
+    - Socrates mode (philosophical talk)
+    - Programmer mode (helps you debug code)
+    - Therapist mode (emotional support)
+    - Tutor mode (explain concepts)
+    - Other mode (you decide)
+    - Normal mode (your typical friend)
+
+Select mode: 
+
+-- Greetings depends on mode --
+Hey bro, how are you feeling today? -> example input for normal mode
+========================================================
+
+
+=== PROGRAM FLOWCHART ===
+
+    Display message -> Personality Selector -> LLM Decide Personality
+    -> Prompt Input Depends on Personality -> Prompt Builder -> LLM (Gemini 2.5 flash) 
+    -> (Input + Response -> Memory storage) -> Output text response.
+
+
+=== FOLDER STRUCTURE ===
+
+mAI-friend/
+│
+├── project.py
+├── personalities.py
+├── prompt_builder.py
+├── memory.py
+├── config.py
+│
+├── data/
+│   ├── user_profile.json
+│   └── history.json
+│
+├── utils/
+│   └── formatter.py
+│
+├── test_project.py
+│
+├── README.md
+├── requirements.txt
+└── .env
+
+
+if mode in choices:
+    select personality from .json
+else:
+    prompt llm to adjust base on the typed custom personality.
+    -> we can use google_search tool here if neededs
