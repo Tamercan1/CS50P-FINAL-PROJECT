@@ -28,21 +28,29 @@ PERSONALITIES = [
 def test_decide_mode(mock_client):
     mock_response = MagicMock()
 
-    mock_response.text = '{"switch": true, "mode": "programmer"}'
+    mock_response.text = '{"action": "switch", "mode": "programmer"}'
     mock_client.models.generate_content.return_value = mock_response
-    result = decide_mode("switch to programmer mode", PERSONALITIES)
-    assert result["switch"] is True
+    result = decide_mode("switch to programmer mode", PERSONALITIES, "normal")
+    assert result["action"] == "switch"
     assert result["mode"] == "programmer"
 
-    mock_response.text = '{"switch": true, "mode": "einstein"}'
+    mock_response.text = '{"action": "switch", "mode": "einstein"}'
     mock_client.models.generate_content.return_value = mock_response
-    result = decide_mode("act like einstein", PERSONALITIES)
-    assert result["switch"] is True
+    result = decide_mode("act like einstein", PERSONALITIES, "normal")
+    assert result["action"] == "switch"
     assert result["mode"] == "einstein"
 
-    mock_response.text = '{"switch": false}'
-    result = decide_mode("what is the weather today?", PERSONALITIES)
-    assert result["switch"] is False
+    mock_response.text = '{"action": "suggest", "mode": "programmer", "reason": "The user is asking for coding help."}'
+    mock_client.models.generate_content.return_value = mock_response
+    result = decide_mode("how do I debug my python code?", PERSONALITIES, "normal")
+    assert result["action"] == "suggest"
+    assert result["mode"] == "programmer"
+    assert "reason" in result
+
+    mock_response.text = '{"action": "stay"}'
+    mock_client.models.generate_content.return_value = mock_response
+    result = decide_mode("what is the weather today?", PERSONALITIES, "normal")
+    assert result["action"] == "stay"
 
 
 def test_build_contents():

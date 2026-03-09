@@ -31,16 +31,20 @@ def print_text(text, title, border_color):
 def stream_response(resp, mode):
     text = ""
 
-    with Live(Panel("[dim]Waiting for response...[/dim]", title=mode, border_style="cyan", width=120, padding=(1, 2)), console=console, refresh_per_second=10) as live:
+    try:
+        with Live(Panel("[dim]Waiting for response...[/dim]", title=mode, border_style="cyan", width=120, padding=(1, 2)), console=console, refresh_per_second=10) as live:
 
-        for chunk in resp:
-            piece = getattr(chunk, "text", "")
-            if not piece:
-                continue
-           
-            text += piece
-            live.update(
-                Panel(Markdown(text), title=mode, border_style="cyan", width=120, padding=(1, 2))
-            )
-    
-    return text
+            for chunk in resp:
+                piece = getattr(chunk, "text", None)
+                if not piece:
+                    continue
+            
+                text += piece
+                live.update(
+                    Panel(Markdown(text), title=mode, border_style="cyan", width=120, padding=(1, 2))
+                )
+        
+        return text
+    except Exception as e:
+        console.print("[red]Streaming error occurred.[/red]")
+        return text if text else None
