@@ -16,7 +16,7 @@ using **prompt engineering and Google's Gemini API**.
 
 ---
 # 🎥 Video Demo
-####  URL: 
+####  URL: [mAI Friend on YouTube](https://youtu.be/9b0ojIOw24c?si=4VPJNPeIO18vdIwG)
 ---
 # 📖 Project Description
 
