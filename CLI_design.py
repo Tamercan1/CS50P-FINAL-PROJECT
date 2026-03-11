@@ -10,6 +10,7 @@ console = Console()
 
 def prompt_user(prompt):
     fprompt = Prompt.ask(f"[bold green]{prompt}[/bold green]")
+    print()
     return fprompt
 
 
@@ -20,6 +21,7 @@ def mode_list(modes: dict) -> str:
 
     for mode in modes:
         table.add_row(mode, modes[mode])
+    print()
 
     console.print(table)
 

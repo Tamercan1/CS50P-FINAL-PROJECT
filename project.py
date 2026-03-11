@@ -12,19 +12,24 @@ from CLI_design import print_text, mode_list, prompt_user, stream_response
 
 load_dotenv()
 
+# initialize .env variables
 api_key = os.getenv("GEMINI_API_KEY")
+CHAT_MODEL = os.getenv("CHAT_MODEL")
+MODE_MODEL = os.getenv("MODE_MODEL")
 
+# catching if api key exist
 if not api_key:
     raise ValueError("GEMINI_API_KEY is missing in .env")
 
+# generate client for the genai model
 client = genai.Client(api_key=api_key)
 
-console = Console()
+console = Console() # for rich console.print()
 
-CHAT_MODEL = "gemini-3.1-flash-lite-preview"
-MODE_MODEL = "gemini-2.5-flash"
-
+# PERSONALITIES from personas.py
 PERSONALITIES = personas.PERSONALITIES
+
+# MODES and short description
 BUILT_IN_MODES = {
     "Einstein": "Science and math explanations",
     "Socrates": "Philosophical discussion",
@@ -35,14 +40,134 @@ BUILT_IN_MODES = {
     "Normal": "Friendly conversation"
 }
 
-
+# for storing mode and its respective prompt
 class Persona:
     def __init__(self, mode="normal", prompt=None):
         self.mode = mode
         self.prompt = prompt
 
+person = Persona() # instance of a class Persona
 
-person = Persona()
+
+def main():
+
+    # loading memory.json file for history tracking 
+    mem = memory.load_memory()
+    current_mode = "normal" # setting mode to normal
+
+    # Introduction text 
+    print_text(
+        text="mAI Friend bot automatically adapt mode, but you can choose from this list:",
+        title="mAI Friend", border_color="blue"
+    )
+    # MODES TABLE with DESCRIPTION
+    mode_list(BUILT_IN_MODES)
+    print()
+
+    display_text = "Let me know what you need."
+
+    # CONVERSATION LOOP
+    while True:
+
+        user_input = prompt_user(display_text)
+
+        # Check if user wants to exit
+        if user_input.lower() in ["exit", "quit"]:
+            memory.save_memory(mem)
+            console.print("[bold cyan]Goodbye![/bold cyan]")
+            break
+        
+        # call decide mode every user input for dynamic mode
+        decision = decide_mode(user_input, PERSONALITIES, current_mode)
+
+        action = decision.get("action", "stay")
+
+        # if user explicitly switch mode
+        if action == "switch":
+            new_mode = decision.get("mode", current_mode)
+
+            if new_mode != current_mode:
+                current_mode = new_mode
+                console.print(f"\n[green]Switching to {current_mode} mode...[/green]\n")
+
+        # if user doesn't explicitly switch but AI suggests
+        elif action == "suggest":
+            suggested_mode = decision.get("mode", current_mode)
+            reason = decision.get("reason", "This mode may fit your request better.")
+
+            if suggested_mode != current_mode:
+                console.print(
+                    f"\n[yellow]Suggestion:[/yellow] {suggested_mode.capitalize()} mode may help here.\n[dim]{reason}[/dim]\n"
+                )
+                suggest_dic = prompt_user("Want to switch? just say [green]'yes'[/green]")
+
+                if suggest_dic.lower() in ["yes", "y", "okay", "ok"]:
+                    current_mode = suggested_mode
+
+        # set mode and prompt
+        person.mode = current_mode
+        person.prompt = get_persona_prompt(person.mode, PERSONALITIES)
+        
+        if person.prompt is None:
+            console.print("[red]No matching personality found.[/red]")
+            continue
+        
+        # build history from memory
+        history = memory.build_history(mem)
+
+        # PROMPT TO AI
+        contents = build_contents(user_input=user_input, history=history)
+
+        # SYSTEM_INSTRUCTION
+        system_instruction = build_prompt(
+            mode=person.mode,
+            instructions=person.prompt["system_prompt"],
+            personality=person.prompt["personality"],
+            greeting=person.prompt["greeting"],
+            style_rules=person.prompt["style_rules"]
+        )
+
+        # Get chat response
+        with console.status("[bold cyan]mAI Friend is thinking...[/bold cyan]", spinner="dots"):
+            time.sleep(0.3)
+            chat_response = get_response_from_AI(
+                contents=contents,
+                instruction=system_instruction,
+                temp=0.8, max_token=500
+            )
+        
+        # Catching when chat response return none
+        if chat_response is None:
+            console.print(f"[red]Sorry, I'm having trouble responding right now. Please try again.[/red]\n")
+            display_text = "Say anything"
+            continue
+
+        # Handle response when api is BUSY
+        try:
+            model_output = stream_response(resp=chat_response, mode=person.prompt['display_name'] + " Mode")
+            print("\n") 
+            if model_output is None:
+                console.print("[red]Failed to stream response.[/red]")
+                continue
+
+        except Exception:
+            console.print(f"[red]Sorry, something went wrong while streaming the response.[/red]\n")
+            display_text = "Say anything"
+            continue
+
+        display_text = "Say anything"
+
+        # append to memory.py every chat turn
+        if model_output:
+            memory.append_trim(mem, "user", user_input)  
+            memory.append_trim(mem, "model", model_output)
+            memory.update_memory(mem)
+            mem["last_mode"] = person.mode            
+            # save memory changes
+            memory.save_memory(mem)
+
+    console.print("[yellow]Nice Conversation, Nice to meet you![/yellow]")
+
 
 # Used only on chat proper
 def get_response_from_AI(contents, instruction, temp, max_token, retries=3):
@@ -166,7 +291,7 @@ User: "hello"
         
         # Handle API errors
         except Exception:
-            console.print(f"[green]Model busy... retrying:[/green]")
+            console.print(f"[green]Model busy... retrying: {i}[/green]")
             time.sleep(2)
 
     print()
@@ -179,124 +304,14 @@ def build_contents(user_input: str, history: list) -> list:
     contents = history + [
             types.Content(role="user", parts=[types.Part(text=user_input)])
     ]
-
     return contents
+
 
 # 3RD FUNCTION
 def get_persona_prompt(mode: str, personalities: list[dict]):
     return next(
         (p["prompt"] for p in personalities if p["id"] == mode), None
     )
-
-
-def main():
-
-    mem = memory.load_memory()
-    current_mode = "normal"
-
-    print_text(
-        text="mAI Friend bot automatically adapt mode, but you can choose from this list:",
-        title="mAI Friend", border_color="blue"
-    )
-    mode_list(BUILT_IN_MODES)
-    print()
-
-    display_text = "Let me know what you need."
-
-    while True:
-
-        user_input = prompt_user(display_text)
-
-
-        # Check if user wants to exit
-        if user_input.lower() in ["exit", "quit"]:
-            memory.save_memory(mem)
-            console.print("[bold cyan]Goodbye![/bold cyan]")
-            break
-        
-        # call decide mode every user input for dynamic mode
-        decision = decide_mode(user_input, PERSONALITIES, current_mode)
-
-        action = decision.get("action", "stay")
-
-        if action == "switch":
-            new_mode = decision.get("mode", current_mode)
-
-            if new_mode != current_mode:
-                current_mode = new_mode
-                console.print(f"\n[green]Switching to {current_mode} mode...[/green]\n")
-
-        elif action == "suggest":
-            suggested_mode = decision.get("mode", current_mode)
-            reason = decision.get("reason", "This mode may fit your request better.")
-
-            if suggested_mode != current_mode:
-                console.print(
-                    f"\n[yellow]Suggestion:[/yellow] {suggested_mode.capitalize()} mode may help here.\n[dim]{reason}[/dim]\n"
-                )
-                suggest_dic = prompt_user("Want to switch? just say [green]'yes'[/green]")
-
-                if suggest_dic.lower() in ["yes", "y", "okay", "ok"]:
-                    current_mode = suggested_mode
-
-        person.mode = current_mode
-        person.prompt = get_persona_prompt(person.mode, PERSONALITIES)
-        
-        if person.prompt is None:
-            console.print("[red]No matching personality found.[/red]")
-            continue
-        
-        # build history from memory
-        history = memory.build_history(mem)
-
-        # PROMPT TO AI
-        contents = build_contents(user_input=user_input, history=history)
-
-        # SYSTEM_INSTRUCTION
-        system_instruction = build_prompt(
-            mode=person.mode,
-            instructions=person.prompt["system_prompt"],
-            personality=person.prompt["personality"],
-            greeting=person.prompt["greeting"],
-            style_rules=person.prompt["style_rules"]
-        )
-
-        with console.status("[bold cyan]mAI Friend is thinking...[/bold cyan]", spinner="dots"):
-            time.sleep(0.3)
-            chat_response = get_response_from_AI(
-                contents=contents,
-                instruction=system_instruction,
-                temp=0.8, max_token=500
-            )
-        
-        if chat_response is None:
-            console.print(f"[red]Sorry, I'm having trouble responding right now. Please try again.[/red]\n")
-            display_text = "Say anything"
-            continue
-
-        # Handle response when api is busy
-        try:
-            model_output = stream_response(resp=chat_response, mode=person.prompt['display_name'] + " Mode")
-            print("\n") 
-            if model_output is None:
-                console.print("[red]Failed to stream response.[/red]")
-                continue
-
-        except Exception:
-            console.print(f"[red]Sorry, something went wrong while streaming the response.[/red]\n")
-            display_text = "Say anything"
-            continue
-
-        # append to memory.py every chat turn
-        if model_output:
-            memory.append_trim(mem, "user", user_input)  
-            memory.append_trim(mem, "model", model_output)
-            memory.update_memory(mem)
-            mem["last_mode"] = person.mode            
-            # save memory changes
-            memory.save_memory(mem)
-
-    console.print("[yellow]Nice Conversation, Nice to meet you![/yellow]")
 
 
 if __name__ == "__main__":

@@ -1,15 +1,19 @@
 import json
 import os
+from dotenv import load_dotenv
 from pathlib import Path
 from google.genai import types
 from google import genai
 
-MEMORY_PATH = Path("memory.json")
-LAST = 12
-MEMORY_MODEL = "gemini-3.1-flash-lite-preview"
+load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
+MEMORY_MODEL = os.getenv("MEMORY_MODEL")
+
 client = genai.Client(api_key=api_key)
+
+MEMORY_PATH = Path("memory.json")
+LAST = 12
 
 # initialize memory.json for storing memory
 def load_memory():

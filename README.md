@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🤖 mAI Friend
+# mAI Friend
 
 ### CLI-Based Adaptive AI Companion
 
@@ -65,7 +65,10 @@ This file contains **unit tests written with pytest**. These tests verify that i
 This file acts as the **persistent storage for the assistant’s memory system**. It stores conversation-related data such as user preferences and recent interactions. The program reads from and writes to this file during execution.
 
 ### `.env.example`
-This file is where other users should **store their API key** to ensure the model will work on their device.
+This file is a template for `.env` file that the user will paste their api key.
+```
+GEMINI_API_KEY=your_api_key_here
+```
 
 ---
 
@@ -79,8 +82,8 @@ mAi Friend Bot dynamically switches between personalities depending on the user'
 | Socrates   | Philosophical reasoning |
 | Programmer   | Debugging and coding help |
 | Therapist   | Emotional support |
-| Other   | User decides personality |
 | Tutor   | Concept explanations |
+| Other   | User decides personality |
 | Normal   | Friendly conversation |
 
 
@@ -92,7 +95,7 @@ mAi Friend Bot dynamically switches between personalities depending on the user'
 ### 3. **Memory System**
   - Using JSON.
   - Stores users preferences based on recent conversation.
-  - Stoes recent conversation history.
+  - Stores recent conversation history.
 
 ### 4. **Prompt Engineering**
   - Custom system prompts to control AI personality.
@@ -126,12 +129,13 @@ Example CLI output:
 │ Normal               │ Friendly conversation                    │
 └──────────────────────┴──────────────────────────────────────────┘
 
-Let me know what you need.: lets talk about physics and math
+Let me know what you need: lets talk about physics and math
 
 Suggestion: Einstein mode may help here.
 The user wants to discuss physics and math, which aligns with intuitive scientific explanations.
 
 Want to switch? just say 'yes': yes
+
 ╭─────────────────────────────────────────────────── Einstein Mode ────────────────────────────────────────────────────╮
 │                                                                                                                      │
 │  A marvelous choice. Math is the language in which the universe writes its laws, and physics is the story that       │
@@ -139,12 +143,13 @@ Want to switch? just say 'yes': yes
 │                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-Let me know what you need.: i need help debugging my code
+Say anything: i need help debugging my code
 
 Suggestion: Programmer mode may help here.
 The user needs help with debugging code.
 
 Want to switch? just say 'yes': yes
+
 ╭─────────────────────────────────────────────── Senior Programmer Mode ───────────────────────────────────────────────╮
 │                                                                                                                      │
 │  Alright, let's take a look. What are you building today?                                                            │
@@ -154,7 +159,7 @@ Want to switch? just say 'yes': yes
 │                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-Let me know what you need.: exit
+Say anything: exit
 Goodbye!
 Nice Conversation, Nice to meet you!
 ```
@@ -209,7 +214,7 @@ Open the `.env` file:
 GEMINI_API_KEY=your_api_key_here
 ```
 
-You can get a free key from  
+You can get a free API key from:  
 https://aistudio.google.com
 
 To do that:
@@ -246,20 +251,21 @@ Formatted CLI Output
 
 ### Gemini Model Availability
 
-This project relies on Google's **Gemini API**, and the availability of models may change over time. If the model specified in the code becomes unavailable, you may need to update the model name in `project.py`.
+This project relies on Google's **Gemini API**, and the availability of models may change over time. If the model specified in the code becomes unavailable, you may need to update the model name in your `.env` file.
 
-For example, if the current model is unavailable:
+For example, if the current model is unavailable, you can change the following:
 
-### `project.py`
+### `.env`
+
 ```python
-CHAT_MODEL = "gemini-3.1-flash-lite-preview"
-MODE_MODEL = "gemini-2.5-flash"
+CHAT_MODEL = gemini-3.1-flash-lite-preview
+MODE_MODEL = gemini-2.5-flash
+MEMORY_MODEL = gemini-3.1-flash-lite-preview
 ```
-### `memory.py`
-```python
-MEMORY_MODEL = "gemini-3.1-flash-lite-preview"
-```
-> You can check other models at <https://ai.google.dev/gemini-api/docs/models> and use what's available
+
+> You can check other models at:    
+<https://ai.google.dev/gemini-api/docs/models>   
+and use whichever model is available.
 ## Run test with pytest:
 
 ```bash
